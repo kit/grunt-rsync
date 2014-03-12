@@ -21,7 +21,7 @@ module.exports = function (grunt) {
     args.push(src.join(' '));
 
     // destination to copy
-    args.push((options.user === '' ? '' :  options.user + '@') + options.host + ':' + options.remoteBase + '/' + target); // TODO: normalize
+    args.push((target.user === '' ? '' : target.user + '@') + target.host + ':' + target.base + '/' + target); // TODO: normalize
     if(options.deleteAfter && !options.dry){
       args.push('&& rm -rf ' + src.join(' '));
     }
@@ -66,7 +66,9 @@ module.exports = function (grunt) {
         // options
         options.dry = grunt.option('no-write'),
         options.host = options.host || 'localhost',
+        options.port = options.port || 22,
         options.user = options.user || '',
+        options.servers = options.servers || [{}];
 
         // TODO system username or nothing?
         options.remoteBase = options.remoteBase || '~',
@@ -130,8 +132,15 @@ module.exports = function (grunt) {
       return success;
     };
 
-    for (var target in files) {
-      doRsync(command, args.slice(), options, target, files, doneCallback); // .slice() => copy array
+    for (var server in options.servers) {
+      server.base = server.base || options.remoteBase,
+      server.host = server.host || options.host,
+      server.port = server.port || options.port,
+      server.user = server.user || options.user;
+
+      for (var target in files) {
+        doRsync(command, args.slice(), options, server, files, doneCallback); // .slice() => copy array
+      }
     }
   });
 
